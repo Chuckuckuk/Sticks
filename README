@@ -1,1 +1,13 @@
 All instructions and commands to play sticks are available in the help menu once you run play_sticks.py.
+
+To install:
+  $ git clone https://github.com/Chuckuckuk/Sticks.git
+  $ cd Sticks
+  $ python play_sticks.py
+
+The AI options are as follows:
+  braindead acts almost completely randomly.
+  easy will attack you if it knows it can take a hand, otherwise it plays defensively.
+  medium is a slightly smarter version of easy.
+  minimax AI (written by Robert Parks) looks for moves that maximize its advantage over you.
+    The depth setting for minimax dictates how many moves into the future it is allowed to calculate.
