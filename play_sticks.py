@@ -1,5 +1,6 @@
 from sticks_game import hands, braindead_AI, easy_AI, med_AI
-from minimax_sticks import GoodPlayer, execute_move, convert_davids_to_mine, sync_to_davids, convert_to_davids, sync_to_mine
+from minimax_sticks import GoodPlayer, GoodPlayer_2, execute_move, convert_davids_to_mine, sync_to_davids, convert_to_davids, sync_to_mine
+from IPython.display import clear_output
 
 print('Welcome to sticks. Type h or help for rules and commands.')
 # initialize you and your opponent's hads
@@ -104,8 +105,11 @@ if diff != 'minimax':
             break
 
 elif diff=='minimax':
-    
-    me = GoodPlayer(depth=dep)
+    t = input("Minimax generation: ")
+    if t == '2':
+        me = GoodPlayer_2(depth=dep)
+    else:
+        me = GoodPlayer(depth=dep)
     david = hands('Me')
     print(' ')
     print("You have",david)
@@ -115,6 +119,7 @@ elif diff=='minimax':
         # make a hands object with the opponent's score
         me_as_davids_type = convert_to_davids(me)
         david_as_my_type = convert_davids_to_mine(david)
+        
         
         # the move itself
         comm = input('What will you do? ').lower()
@@ -186,8 +191,11 @@ elif diff=='minimax':
         
         # minimax player's move: AI, move second
         my_move = me.select_move(david_as_my_type)
+        clear_output()
         if len(my_move) == 2:
             print('The bot taps your','left' if my_move[1]=='l' else 'right','with its','left.' if my_move[0]=='l' else 'right.')
+        elif len(my_move) == 3:
+            print('The bot swaps',my_move[2],'from its','left' if my_move[1]=='l' else 'right','hand.')
         
         execute_move(me, david_as_my_type, my_move)
         sync_to_davids(david_as_my_type,david)
@@ -198,6 +206,5 @@ elif diff=='minimax':
         elif david.lost:
             print("You lose!")
             break
-            
         print("You have",david)
         print("They have",convert_to_davids(me))

@@ -70,7 +70,7 @@ class hands:
             
 class braindead_AI(hands):
     def execute_best_action(self,opp,muted):
-        self.act(opp,muted=False)
+        self.act(opp,muted=True)
         
 class easy_AI(hands):
     def choose_action(self,opp):

@@ -4,7 +4,7 @@ from typing import Iterable, Tuple
 from copy import copy
 import sticks_game
 import random
-from numpy import mean, std
+from numpy import mean, std, sum
 
 
 possible_moves = (
@@ -68,7 +68,36 @@ def minimax(_p1, _p2, depth):
                 scored_moves.append((move, -score))
     return maximize(scored_moves)
 
+def minimax_2(_p1, _p2, depth):
+    scored_moves = []
+    moves_to_score = valid_moves(_p1, _p2)
+    if not moves_to_score:
+        return '', (2 if _p2.good_hands()==0 else _p1.good_hands() - _p2.good_hands())
+    if depth == 1:
+        for move in moves_to_score:
+            p1, p2 = copy(_p1), copy(_p2)
+            execute_move(p1, p2, move)
+            score = (2 if p2.good_hands()==0 else _p1.good_hands() - p2.good_hands())
+            scored_moves.append((move, score))
+    else:
+        for move in moves_to_score:
+            p1, p2 = copy(_p1), copy(_p2)
+            execute_move(p1, p2, move)
+            scored_move = minimax(p2, p1, depth - 1)
+            if scored_move is not None:
+                _, score = scored_move
+                scored_moves.append((move, -score))
+    return maximize(scored_moves)
 
+class GoodPlayer_2(Player):
+    def __init__(self, depth=4):
+        super(GoodPlayer_2, self).__init__()
+        self.depth = depth
+
+    def select_move(self, opponent):
+        move, score = minimax_2(self, opponent, self.depth)
+        return move
+    
 class GoodPlayer(Player):
     def __init__(self, depth=4):
         super(GoodPlayer, self).__init__()
@@ -164,19 +193,75 @@ def sync_to_mine(davids_type, me):
     me.left = davids_type.hand_dict['left'] % 5
     me.right = davids_type.hand_dict['right'] % 5
 
-
+def sim_1k_bob():
+    wins_1,wins_2=(0,0)
+    tot_1 = []
+    tot_2 = []
+    draw_tot = []
+    t1 = input('AI 1 version: ')
+    t2 = input('AI 2 version: ')
+    dep1 = input('AI 1 depth: ')
+    dep2 = input('AI 2 depth: ')
+    for _ in range(10):
+        wins_1 = 0
+        wins_2 = 0
+        draws = 0
+        for k in range(100):
+            if t1 == '2':
+                AI_1 = GoodPlayer_2(depth=int(dep1))
+            else:
+                AI_1 = GoodPlayer(depth=int(dep1))
+            if t2 == '2':
+                AI_2 = GoodPlayer_2(depth=int(dep2))
+            else:
+                AI_2 = GoodPlayer(depth=int(dep2))
+            turns = 0
+            while True:
+                turns += 1
+                move_1 = AI_1.select_move(AI_2)
+                execute_move(AI_1,AI_2,move_1)
+                if not AI_1.alive():
+                    wins_1 += 1
+                    break
+                move_2 = AI_2.select_move(AI_1)
+                execute_move(AI_2,AI_1,move_2)
+                if not AI_2.alive():
+                    wins_2 += 1
+                    break
+                if turns == 50:
+                    draws+=1
+                    break
+            tot_1.append(wins_1)
+            tot_2.append(wins_2)
+            draw_tot.append(draws)
+        print("Depth {} won {}, depth {} won {}. They drew {} times".format(dep1,wins_1,dep2,wins_2,draws))
+    print("Depth {} won an average of {} games".format(dep1,mean(tot_1)))
+    print("Depth {} won an average of {} games".format(dep2,mean(tot_2)))
+    print("The bots drew {}% of their games.".format(sum(draw_tot)/1000))
+    print("Standard deviation: {}".format(std(tot_1)))
+    
 def sim_1k():
     me_wins, dave_wins = (0,0)
     me_tot = []
     d_tot = []
 
     dep = int(input("Depth for Bob's AI: "))
+    t1 = input("Generation for Bob's AI: ")
+    diff = input("Difficulty for David's AI: ")
     
     for i in range(10):
         me_wins, dave_wins = (0,0)
         for _ in range(100):
-            me = GoodPlayer(depth=dep)
-            david = sticks_game.med_AI('David')
+            if t1 == '2':
+                me = GoodPlayer_2(depth=dep)
+            else:
+                me = GoodPlayer(depth=dep)
+            if diff=='braindead':
+                david = sticks_game.braindead_AI('David')
+            elif diff=='easy':
+                david = sticks_game.easy_AI('David')
+            else:
+                david = sticks_game.med_AI('David')
             while True:
                 david_as_my_type = convert_davids_to_mine(david)
                 #print("me: {} v {} :david".format(me, david_as_my_type))
@@ -194,16 +279,16 @@ def sim_1k():
                     break
                 sync_to_davids(david_as_my_type, david)
                 me_as_davids_type = convert_to_davids(me)
-                david.execute_best_action(me_as_davids_type)
+                david.execute_best_action(me_as_davids_type,muted=True)
                 sync_to_mine(me_as_davids_type, me)
 
-        print("I won",me_wins,"games. David won",dave_wins,"games.")
+        print("minimax {} won".format(dep),me_wins,"games. {} AI won".format(diff),dave_wins,"games.")
         me_tot.append(me_wins)
         d_tot.append(dave_wins)
         #input("Press enter to continue")
 
-    print("Average wins for me:",mean(me_tot))
-    print("Average wins for David:",mean(d_tot))
+    print("Average wins for minimax {}:".format(dep),mean(me_tot))
+    print("Average wins for {} AI:".format(diff),mean(d_tot))
     print("Standard deviation:",std(me_tot))
     
     
